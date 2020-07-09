@@ -39,12 +39,12 @@ namespace PromotionEngine
                 {
                     case PromotionType.Nitems:
                         var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
-                        totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList);
+                        totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList.Where(o=>o.IsPromoApplied==false).ToList());
                         break;
 
                     case PromotionType.Combo:
                         var ComboList = promotions.Where(w => w.Type == PromotionType.Combo).ToList();
-                        totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList);
+                        totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
                         break;
                 }
             }
@@ -58,7 +58,7 @@ namespace PromotionEngine
             foreach (var order in OrderList)
             {
                 var promo = promotions
-                    .Where(w => w.Type == PromotionType.Nitems && w.SKUs[0] == order.SKU && w.Value <= order.Quantity)
+                    .Where(w => w.SKUs[0] == order.SKU && w.Value <= order.Quantity)
                     .Select(s => new { TimeValue = (int)(order.Quantity / s.Value), s.Value, s.Price }).FirstOrDefault();
 
                 if (promo != null && promo.TimeValue > 0)
@@ -77,7 +77,6 @@ namespace PromotionEngine
             double promoValue = 0;
 
             var promo = promotions
-                .Where(w => w.Type == PromotionType.Combo)
                 .Select(s => new { s.SKUs, s.Price }).FirstOrDefault();
 
             if (promo != null && promo.SKUs.Count > 1)
@@ -99,6 +98,8 @@ namespace PromotionEngine
 
             return promoValue;
         }
+
+
     }
 
     public class Order : Item
