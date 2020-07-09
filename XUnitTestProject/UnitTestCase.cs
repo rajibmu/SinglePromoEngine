@@ -17,7 +17,7 @@ namespace XUnitTestProject
 
             var actual = PromoEngine.Calculate(items, promotions, cart);
             
-            int expected = 100;
+            int expected = 115;
             Assert.Equal(expected, actual);
         }
     }
