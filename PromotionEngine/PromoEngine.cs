@@ -8,12 +8,29 @@ namespace PromotionEngine
     {
         static void Main(string[] args)
         {
-            PromoEngine.Calculate();
+            var items = new List<Item>() { new Item('A', 50), new Item('B', 30), new Item('C', 20), new Item('D', 15) };
+            var promotions = new List<Promotion>() { new Promotion(1, new List<char> { 'A' }, 3, 130)};
+            var cart = new Dictionary<char, int> { { 'A', 1 }, { 'B', 1 }, { 'C', 1 }, { 'D', 1 } };
+            PromoEngine.Calculate(items, promotions, cart);
         }
 
-        public static double Calculate()
+        public static double Calculate(List<Item> items, List<Promotion> promotions, Dictionary<char, int> cart)
         {
             double totalOrdersAmount = 0;
+
+            //Create Order
+            List<Order> OrderList = new List<Order>();
+            foreach (var item in cart)
+            {
+                var order = new Order();
+                order.SKU = item.Key;
+                order.Quantity = item.Value;
+                order.IsPromoApplied = false;
+                order.Price = items.Where(w => w.SKU == item.Key).Select(s => s.Price).FirstOrDefault();
+                order.TotalAmount = order.Quantity * order.Price;
+                OrderList.Add(order);
+            }
+            totalOrdersAmount = OrderList.Select(s => s.TotalAmount).Sum();
 
             return totalOrdersAmount;
         }
