@@ -33,8 +33,17 @@ namespace PromotionEngine
             totalOrdersAmount = OrderList.Select(s => s.TotalAmount).Sum();
 
             var promolist = promotions.Select(s => s.Type).Distinct().ToList();
-            var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
-            totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList);
+            foreach (var tempPromo in promolist)
+            {
+                switch (tempPromo)
+                {
+                    case PromotionType.Nitems:
+                        var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
+                        totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList);
+                        break;
+
+                }
+            }
 
             return totalOrdersAmount;
         }
