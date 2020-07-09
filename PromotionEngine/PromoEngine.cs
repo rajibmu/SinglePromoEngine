@@ -113,17 +113,15 @@ namespace PromotionEngine
             foreach (var order in OrderList)
             {
                 var promo = promotions
-                    .Where(w => w.SKUs[0] == order.SKU && w.Value <= order.Quantity)
-                    .Select(s => new { TimeValue = (int)(order.Quantity / s.Value), s.Value, s.Price }).FirstOrDefault();
+                    .Where(w => w.SKUs[0] == order.SKU)
+                    .Select(s => new { Percentage = s.Value}).FirstOrDefault();
 
-                if (promo != null && promo.TimeValue > 0)
+                if (promo != null && promo.Percentage > 0)
                 {
-                    promoValue += ((promo.TimeValue * promo.Value) * order.Price) - (promo.TimeValue * promo.Price);
+                    promoValue += (order.Quantity * order.Price) - ((order.Quantity * order.Price) * (promo.Percentage/100));
                     order.IsPromoApplied = true;
                 }
             }
-
-            return promoValue;
 
             return promoValue;
         }
