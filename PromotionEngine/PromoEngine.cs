@@ -1,18 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PromotionEngine
 {
-    class PromoEngine
+    public class PromoEngine
     {
         static void Main(string[] args)
         {
+
             PromoEngine.Calculate();
         }
 
         public static double Calculate()
         {
-            double totalOrdersAmount = 0;
+            double totalOrdersAmount = 100;
 
             return totalOrdersAmount;
         }
+    }
+
 }
