@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,8 +8,24 @@ namespace PromotionEngine
 {
     public class PromoEngine
     {
+
+        ILoggerFactory loggerFactory = LoggerFactory.Create(builder => {
+            builder.AddFilter("Microsoft", LogLevel.Warning)
+                    .AddFilter("System", LogLevel.Warning)
+                    .AddFilter("PromotionEngine.PromoEngine", LogLevel.Debug)
+                    .AddConsole();
+        });
+        public static ILogger _logger;
+
+        public PromoEngine()
+        {
+            _logger = loggerFactory.CreateLogger<PromoEngine>();
+        }
+
+
         static void Main(string[] args)
         {
+
             var items = new List<Item>() { new Item('A', 50), new Item('B', 30), new Item('C', 20), new Item('D', 15) };
             var promotions = new List<Promotion>() { new Promotion(1, new List<char> { 'A' }, 3, 130)};
             var cart = new Dictionary<char, int> { { 'A', 1 }, { 'B', 1 }, { 'C', 1 }, { 'D', 1 } };
@@ -17,43 +35,49 @@ namespace PromotionEngine
         public static double Calculate(List<Item> items, List<Promotion> promotions, Dictionary<char, int> cart)
         {
             double totalOrdersAmount = 0;
-
-            //Create Order
-            List<Order> OrderList = new List<Order>();
-            foreach (var item in cart)
+            try
             {
-                var order = new Order();
-                order.SKU = item.Key;
-                order.Quantity = item.Value;
-                order.IsPromoApplied = false;
-                order.Price = items.Where(w => w.SKU == item.Key).Select(s => s.Price).FirstOrDefault();
-                order.TotalAmount = order.Quantity * order.Price;
-                OrderList.Add(order);
-            }
-            totalOrdersAmount = OrderList.Select(s => s.TotalAmount).Sum();
-
-            var promolist = promotions.Select(s => s.Type).Distinct().ToList();
-            foreach (var tempPromo in promolist)
-            {
-                switch (tempPromo)
+                //Create Order
+                List<Order> OrderList = new List<Order>();
+                foreach (var item in cart)
                 {
-                    case PromotionType.Nitems:
-                        var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
-                        totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList.Where(o=>o.IsPromoApplied==false).ToList());
-                        break;
+                    var order = new Order();
+                    order.SKU = item.Key;
+                    order.Quantity = item.Value;
+                    order.IsPromoApplied = false;
+                    order.Price = items.Where(w => w.SKU == item.Key).Select(s => s.Price).FirstOrDefault();
+                    order.TotalAmount = order.Quantity * order.Price;
+                    OrderList.Add(order);
+                }
+                totalOrdersAmount = OrderList.Select(s => s.TotalAmount).Sum();
 
-                    case PromotionType.Combo:
-                        var ComboList = promotions.Where(w => w.Type == PromotionType.Combo).ToList();
-                        totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
-                        break;
+                var promolist = promotions.Select(s => s.Type).Distinct().ToList();
+                foreach (var tempPromo in promolist)
+                {
+                    switch (tempPromo)
+                    {
+                        case PromotionType.Nitems:
+                            var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
+                            totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
+                            break;
 
-                    case PromotionType.Percentage:
-                        var PerList = promotions.Where(w => w.Type == PromotionType.Percentage).ToList();
-                        totalOrdersAmount -= ApplyPromoDiscountPercentage(PerList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
-                        break;
+                        case PromotionType.Combo:
+                            var ComboList = promotions.Where(w => w.Type == PromotionType.Combo).ToList();
+                            totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
+                            break;
+
+                        case PromotionType.Percentage:
+                            var PerList = promotions.Where(w => w.Type == PromotionType.Percentage).ToList();
+                            totalOrdersAmount -= ApplyPromoDiscountPercentage(PerList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
+                            break;
+                    }
                 }
             }
-
+            catch (Exception ex)
+            {
+                _logger.LogInformation("Log message: {0}", ex.Message);
+                throw;
+            }
             return totalOrdersAmount;
         }
 
@@ -125,6 +149,8 @@ namespace PromotionEngine
 
             return promoValue;
         }
+
+
     }
 
     public class Order : Item
