@@ -46,6 +46,11 @@ namespace PromotionEngine
                         var ComboList = promotions.Where(w => w.Type == PromotionType.Combo).ToList();
                         totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
                         break;
+
+                    case PromotionType.Percentage:
+                        var PerList = promotions.Where(w => w.Type == PromotionType.Percentage).ToList();
+                        totalOrdersAmount -= ApplyPromoCombo(PerList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
+                        break;
                 }
             }
 
@@ -76,30 +81,52 @@ namespace PromotionEngine
         {
             double promoValue = 0;
 
-            var promo = promotions
-                .Select(s => new { s.SKUs, s.Price }).FirstOrDefault();
+            var promos = promotions
+                .Select(s => new { s.SKUs, s.Price });
 
-            if (promo != null && promo.SKUs.Count > 1)
+            foreach (var promo in promos)
             {
-                var tempOrder = OrderList.Where(o => promo.SKUs.Contains(o.SKU)).ToList();
-                if (promo.SKUs.Count == tempOrder.Count)
+                if (promo != null && promo.SKUs.Count > 1)
                 {
-                    var maxCount = tempOrder.Select(s => s.Quantity).Min();
-                    double actualValue = 0;
-                    foreach (var order in tempOrder)
+                    var tempOrder = OrderList.Where(o => promo.SKUs.Contains(o.SKU) && o.IsPromoApplied==false).ToList();
+                    if (promo.SKUs.Count == tempOrder.Count)
                     {
-                        order.IsPromoApplied = true;
-                        actualValue += order.Price * maxCount;
+                        var maxCount = tempOrder.Select(s => s.Quantity).Min();
+                        double actualValue = 0;
+                        foreach (var order in tempOrder)
+                        {
+                            order.IsPromoApplied = true;
+                            actualValue += order.Price * maxCount;
+                        }
+                        promoValue = actualValue - promo.Price * maxCount;
                     }
-                    promoValue = actualValue - promo.Price * maxCount;
                 }
-
             }
 
             return promoValue;
         }
 
+        private static double ApplyPromoPercentage(List<Promotion> promotions, List<Order> OrderList)
+        {
+            double promoValue = 0;
 
+            foreach (var order in OrderList)
+            {
+                var promo = promotions
+                    .Where(w => w.SKUs[0] == order.SKU && w.Value <= order.Quantity)
+                    .Select(s => new { TimeValue = (int)(order.Quantity / s.Value), s.Value, s.Price }).FirstOrDefault();
+
+                if (promo != null && promo.TimeValue > 0)
+                {
+                    promoValue += ((promo.TimeValue * promo.Value) * order.Price) - (promo.TimeValue * promo.Price);
+                    order.IsPromoApplied = true;
+                }
+            }
+
+            return promoValue;
+
+            return promoValue;
+        }
     }
 
     public class Order : Item
