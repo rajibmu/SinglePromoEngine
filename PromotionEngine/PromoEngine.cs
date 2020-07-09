@@ -42,6 +42,10 @@ namespace PromotionEngine
                         totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList);
                         break;
 
+                    case PromotionType.Combo:
+                        var ComboList = promotions.Where(w => w.Type == PromotionType.Combo).ToList();
+                        totalOrdersAmount -= ApplyPromoCombo(ComboList, OrderList);
+                        break;
                 }
             }
 
@@ -66,6 +70,34 @@ namespace PromotionEngine
 
             return promoValue;
 
+        }
+
+        private static double ApplyPromoCombo(List<Promotion> promotions, List<Order> OrderList)
+        {
+            double promoValue = 0;
+
+            var promo = promotions
+                .Where(w => w.Type == PromotionType.Combo)
+                .Select(s => new { s.SKUs, s.Price }).FirstOrDefault();
+
+            if (promo != null && promo.SKUs.Count > 1)
+            {
+                var tempOrder = OrderList.Where(o => promo.SKUs.Contains(o.SKU)).ToList();
+                if (promo.SKUs.Count == tempOrder.Count)
+                {
+                    var maxCount = tempOrder.Select(s => s.Quantity).Min();
+                    double actualValue = 0;
+                    foreach (var order in tempOrder)
+                    {
+                        order.IsPromoApplied = true;
+                        actualValue += order.Price * maxCount;
+                    }
+                    promoValue = actualValue - promo.Price * maxCount;
+                }
+
+            }
+
+            return promoValue;
         }
     }
 
