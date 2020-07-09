@@ -32,7 +32,31 @@ namespace PromotionEngine
             }
             totalOrdersAmount = OrderList.Select(s => s.TotalAmount).Sum();
 
+            var promolist = promotions.Select(s => s.Type).Distinct().ToList();
+            var NitemsList = promotions.Where(w => w.Type == PromotionType.Nitems).ToList();
+            totalOrdersAmount -= ApplyPromoNitems(NitemsList, OrderList);
+
             return totalOrdersAmount;
+        }
+
+        private static double ApplyPromoNitems(List<Promotion> promotions, List<Order> OrderList)
+        {
+            double promoValue = 0;
+            foreach (var order in OrderList)
+            {
+                var promo = promotions
+                    .Where(w => w.Type == PromotionType.Nitems && w.SKUs[0] == order.SKU && w.Value <= order.Quantity)
+                    .Select(s => new { TimeValue = (int)(order.Quantity / s.Value), s.Value, s.Price }).FirstOrDefault();
+
+                if (promo != null && promo.TimeValue > 0)
+                {
+                    promoValue += ((promo.TimeValue * promo.Value) * order.Price) - (promo.TimeValue * promo.Price);
+                    order.IsPromoApplied = true;
+                }
+            }
+
+            return promoValue;
+
         }
     }
 
