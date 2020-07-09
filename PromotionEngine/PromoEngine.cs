@@ -49,7 +49,7 @@ namespace PromotionEngine
 
                     case PromotionType.Percentage:
                         var PerList = promotions.Where(w => w.Type == PromotionType.Percentage).ToList();
-                        totalOrdersAmount -= ApplyPromoCombo(PerList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
+                        totalOrdersAmount -= ApplyPromoDiscountPercentage(PerList, OrderList.Where(o => o.IsPromoApplied == false).ToList());
                         break;
                 }
             }
@@ -106,7 +106,7 @@ namespace PromotionEngine
             return promoValue;
         }
 
-        private static double ApplyPromoPercentage(List<Promotion> promotions, List<Order> OrderList)
+        private static double ApplyPromoDiscountPercentage(List<Promotion> promotions, List<Order> OrderList)
         {
             double promoValue = 0;
 
@@ -118,7 +118,7 @@ namespace PromotionEngine
 
                 if (promo != null && promo.Percentage > 0)
                 {
-                    promoValue += (order.Quantity * order.Price) - ((order.Quantity * order.Price) * (promo.Percentage/100));
+                    promoValue += order.Quantity * order.Price * (double)(promo.Percentage/100);
                     order.IsPromoApplied = true;
                 }
             }
@@ -159,7 +159,7 @@ namespace PromotionEngine
         }
         public PromotionType Type { get; set; }
         public List<char> SKUs { get; set; }
-        public int Value { get; set; }
+        public double Value { get; set; }
         public double Price { get; set; }
     }
 
